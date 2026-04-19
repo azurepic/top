@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>けいさん50</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fff7cf;
+      --panel: #ffffff;
+      --ink: #253047;
+      --muted: #647089;
+      --line: #eadfba;
+      --accent: #ff7a3d;
+      --accent-strong: #e75f22;
+      --ok: #168a4a;
+      --ng: #d8345f;
+      --soft-ok: #dff8e8;
+      --soft-ng: #ffe3ea;
+      --sky: #dff5ff;
+      --mint: #e4f8d9;
+      --lemon: #fff0a6;
+      --peach: #ffe1cc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    main {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 16px 16px 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .button {
+      min-width: 112px;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .button:hover,
+    .button:focus {
+      background: var(--accent-strong);
+      outline: none;
+    }
+
+    .button.secondary {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .button.secondary:hover,
+    .button.secondary:focus {
+      border-color: var(--accent);
+      background: #fff1da;
+    }
+
+    .home-layout,
+    .result-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .hero,
+    .records,
+    .result-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 22px;
+    }
+
+    .hero {
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 22px;
+    }
+
+    .hero-title,
+    .result-title {
+      margin: 0;
+      font-size: clamp(42px, 10vw, 86px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .hero-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.6;
+    }
+
+    .records h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .best-time {
+      margin: 0 0 16px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #f0fbff;
+      color: var(--accent-strong);
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .record-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .record-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .record-list .empty {
+      display: block;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .record-date {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .play-layout {
+      display: block;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 10px 14px;
+    }
+
+    .stat-label {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .time-value {
+      font-size: clamp(36px, 6vw, 56px);
+      letter-spacing: 0;
+    }
+
+    .progress-value {
+      display: block;
+      margin-bottom: 10px;
+      font-size: clamp(30px, 4.6vw, 42px);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .progress-track {
+      height: 18px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #f2ead0;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #44c7ff, #74d66c, #ffd84d, #ff8a4c);
+      transition: width 160ms ease;
+    }
+
+    .stage {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 16px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .problem-count {
+      display: none;
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .problem {
+      min-height: clamp(120px, 20vh, 150px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: #f9faf7;
+      font-size: clamp(58px, 14vw, 108px);
+      font-weight: 900;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .reaction {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.22);
+      font-size: clamp(220px, 44vw, 460px);
+      font-weight: 900;
+      line-height: 1;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.82);
+      transition: opacity 80ms ease, transform 120ms ease;
+      text-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+    }
+
+    .reaction.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .reaction.ok {
+      color: var(--ok);
+    }
+
+    .reaction.ng {
+      color: var(--ng);
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 9px;
+    }
+
+    .answer-button {
+      aspect-ratio: 2.8 / 1;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-size: clamp(24px, 5vw, 42px);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .answer-button:nth-child(-n + 5) {
+      background: var(--sky);
+    }
+
+    .answer-button:nth-child(n + 6):nth-child(-n + 10) {
+      background: var(--mint);
+    }
+
+    .answer-button:nth-child(n + 11):nth-child(-n + 15) {
+      background: var(--lemon);
+    }
+
+    .answer-button:nth-child(n + 16):nth-child(-n + 20) {
+      background: var(--peach);
+    }
+
+    .answer-button:hover,
+    .answer-button:focus {
+      border-color: var(--accent);
+      filter: saturate(1.12) brightness(0.98);
+      outline: none;
+    }
+
+    .answer-button.correct {
+      border-color: var(--ok);
+      background: var(--soft-ok);
+      color: var(--ok);
+    }
+
+    .answer-button.wrong {
+      border-color: var(--ng);
+      background: var(--soft-ng);
+      color: var(--ng);
+    }
+
+    .answer-button:disabled {
+      cursor: default;
+      opacity: 0.72;
+    }
+
+    .result-time {
+      margin: 18px 0;
+      color: var(--accent-strong);
+      font-size: clamp(44px, 10vw, 84px);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .result-score {
+      margin: 0;
+      color: var(--muted);
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 700px) {
+      main {
+        padding-top: 16px;
+      }
+
+      .topbar,
+      .home-layout,
+      .result-layout,
+      .play-layout,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        justify-content: stretch;
+      }
+
+      .button {
+        flex: 1 1 130px;
+      }
+
+      .hero {
+        min-height: 240px;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .answers {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+      }
+
+      .problem {
+        min-height: 140px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="screen active" id="homeScreen">
+      <div class="topbar">
+        <h1>けいさん50</h1>
+      </div>
+
+      <div class="home-layout">
+        <div class="hero">
+          <p class="hero-title">けいさん50</p>
+          <p class="hero-note">左右の数は1から10。答えは1から20のボタンで選びます。</p>
+          <div>
+            <button class="button" id="startButton" type="button">スタート</button>
+          </div>
+        </div>
+
+        <aside class="records" aria-label="記録">
+          <h2>記録</h2>
+          <p class="best-time" id="homeBestTime">最速 --</p>
+          <ul class="record-list" id="homeRecordList"></ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen" id="playScreen">
+      <div class="topbar">
+        <h1>けいさん50</h1>
+        <div class="actions">
+          <button class="button secondary" id="stopButton" type="button">ストップ</button>
+          <button class="button secondary" id="topButton" type="button">トップ</button>
+        </div>
+      </div>
+
+      <section class="stats" aria-label="成績">
+        <div class="stat">
+          <span class="stat-label">時間</span>
+          <span class="stat-value time-value" id="timeText">0秒</span>
+        </div>
+        <div class="stat progress-card">
+          <span class="stat-label">いま何問目</span>
+          <span class="progress-value" id="progressText">1 / 50</span>
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="play-layout">
+        <section class="stage" aria-live="polite">
+          <p class="problem-count" id="countText">1 / 50</p>
+          <div class="problem" id="problemText">1 + 1</div>
+          <div class="reaction" id="reactionText" aria-hidden="true"></div>
+        </section>
+
+        <section class="answers" id="answers" aria-label="答え"></section>
+      </div>
+    </section>
+
+    <section class="screen" id="resultScreen">
+      <div class="topbar">
+        <h1>けいさん50</h1>
+        <div class="actions">
+          <button class="button" id="retryButton" type="button">リトライ</button>
+          <button class="button secondary" id="resultTopButton" type="button">トップ</button>
+        </div>
+      </div>
+
+      <div class="result-layout">
+        <div class="result-box">
+          <p class="result-title" id="resultTitle">完了</p>
+          <p class="result-time" id="resultTime">0秒</p>
+          <p class="result-score" id="resultScore">正解 0 / 50</p>
+        </div>
+
+        <aside class="records" aria-label="記録">
+          <h2>記録</h2>
+          <p class="best-time" id="resultBestTime">最速 --</p>
+          <ul class="record-list" id="resultRecordList"></ul>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const QUESTION_TOTAL = 50;
+    const POINTS_PER_QUESTION = 2;
+    const MAX_OPERAND = 10;
+    const ANSWER_MIN = 1;
+    const ANSWER_MAX = 20;
+    const REACTION_MS = 500;
+    const RECORD_KEY = "calc1Records";
+
+    const homeScreen = document.getElementById("homeScreen");
+    const playScreen = document.getElementById("playScreen");
+    const resultScreen = document.getElementById("resultScreen");
+    const startButton = document.getElementById("startButton");
+    const stopButton = document.getElementById("stopButton");
+    const topButton = document.getElementById("topButton");
+    const retryButton = document.getElementById("retryButton");
+    const resultTopButton = document.getElementById("resultTopButton");
+    const timeText = document.getElementById("timeText");
+    const progressText = document.getElementById("progressText");
+    const progressFill = document.getElementById("progressFill");
+    const countText = document.getElementById("countText");
+    const problemText = document.getElementById("problemText");
+    const reactionText = document.getElementById("reactionText");
+    const answers = document.getElementById("answers");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultTime = document.getElementById("resultTime");
+    const resultScore = document.getElementById("resultScore");
+    const homeBestTime = document.getElementById("homeBestTime");
+    const homeRecordList = document.getElementById("homeRecordList");
+    const resultBestTime = document.getElementById("resultBestTime");
+    const resultRecordList = document.getElementById("resultRecordList");
+
+    let questions = [];
+    let currentIndex = 0;
+    let correctCount = 0;
+    let startTime = 0;
+    let elapsedMs = 0;
+    let timerId = 0;
+    let nextQuestionId = 0;
+    let locked = false;
+    let isPlaying = false;
+    let isPaused = false;
+    let pausedAt = 0;
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function makeQuestion() {
+      const operator = Math.random() < 0.5 ? "+" : "-";
+      let left = randomInt(1, MAX_OPERAND);
+      let right = randomInt(1, MAX_OPERAND);
+
+      if (operator === "+") {
+        return {
+          left,
+          right,
+          operator,
+          answer: left + right
+        };
+      }
+
+      if (left <= right) {
+        const bigger = Math.max(left, right);
+        const smaller = Math.min(left, right);
+        left = bigger;
+        right = smaller;
+      }
+
+      if (left === right) {
+        left = randomInt(2, MAX_OPERAND);
+        right = randomInt(1, left - 1);
+      }
+
+      return {
+        left,
+        right,
+        operator,
+        answer: left - right
+      };
+    }
+
+    function makeQuestions() {
+      return Array.from({ length: QUESTION_TOTAL }, makeQuestion);
+    }
+
+    function formatTime(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+
+      if (minutes > 0) {
+        return `${minutes}分${seconds}秒`;
+      }
+
+      return `${seconds}秒`;
+    }
+
+    function showScreen(screen) {
+      [homeScreen, playScreen, resultScreen].forEach((item) => {
+        item.classList.toggle("active", item === screen);
+      });
+    }
+
+    function getRecords() {
+      try {
+        const records = JSON.parse(localStorage.getItem(RECORD_KEY) || "[]");
+        return Array.isArray(records) ? records : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveRecord(ms, score) {
+      const records = getRecords();
+      records.unshift({
+        ms,
+        score,
+        points: score * POINTS_PER_QUESTION,
+        date: new Date().toISOString()
+      });
+      localStorage.setItem(RECORD_KEY, JSON.stringify(records.slice(0, 50)));
+    }
+
+    function renderRecords(bestElement, listElement) {
+      const records = getRecords();
+      const best = records.reduce((current, record) => {
+        if (!current || record.ms < current.ms) {
+          return record;
+        }
+        return current;
+      }, null);
+      const recent = records.slice(0, 5);
+
+      bestElement.textContent = best ? `最速 ${formatTime(best.ms)}` : "最速 --";
+      listElement.innerHTML = "";
+
+      if (recent.length === 0) {
+        const item = document.createElement("li");
+        item.className = "empty";
+        item.textContent = "まだ記録はありません";
+        listElement.appendChild(item);
+        return;
+      }
+
+      recent.forEach((record) => {
+        const item = document.createElement("li");
+        const time = document.createElement("span");
+        const date = document.createElement("span");
+        const points = record.points ?? record.score * POINTS_PER_QUESTION;
+        time.textContent = `${formatTime(record.ms)} / ${points}点`;
+        date.className = "record-date";
+        date.textContent = new Date(record.date).toLocaleString("ja-JP", {
+          month: "numeric",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+        item.append(time, date);
+        listElement.appendChild(item);
+      });
+    }
+
+    function renderAllRecords() {
+      renderRecords(homeBestTime, homeRecordList);
+      renderRecords(resultBestTime, resultRecordList);
+    }
+
+    function updateTime() {
+      elapsedMs = performance.now() - startTime;
+      timeText.textContent = formatTime(elapsedMs);
+    }
+
+    function clearTimer() {
+      clearInterval(timerId);
+      timerId = 0;
+    }
+
+    function clearNextQuestion() {
+      clearTimeout(nextQuestionId);
+      nextQuestionId = 0;
+    }
+
+    function setAnswerButtonsDisabled(disabled) {
+      document.querySelectorAll(".answer-button").forEach((button) => {
+        button.disabled = disabled;
+      });
+    }
+
+    function updateProgress() {
+      const currentQuestion = Math.min(currentIndex + 1, QUESTION_TOTAL);
+      const progressPercent = (currentQuestion / QUESTION_TOTAL) * 100;
+      progressText.textContent = `${currentQuestion} / ${QUESTION_TOTAL}`;
+      progressFill.style.width = `${progressPercent}%`;
+    }
+
+    function renderQuestion() {
+      const question = questions[currentIndex];
+      countText.textContent = `${currentIndex + 1} / ${QUESTION_TOTAL}`;
+      problemText.textContent = `${question.left} ${question.operator} ${question.right}`;
+      updateProgress();
+      reactionText.textContent = "";
+      reactionText.className = "reaction";
+      locked = false;
+      isPaused = false;
+      stopButton.textContent = "ストップ";
+
+      document.querySelectorAll(".answer-button").forEach((button) => {
+        button.disabled = false;
+        button.classList.remove("correct", "wrong");
+      });
+    }
+
+    function showResult(title, shouldSave) {
+      isPlaying = false;
+      isPaused = false;
+      clearTimer();
+      clearNextQuestion();
+      elapsedMs = performance.now() - startTime;
+
+      if (shouldSave) {
+        saveRecord(elapsedMs, correctCount);
+      }
+
+      resultTitle.textContent = title;
+      resultTime.textContent = formatTime(elapsedMs);
+      resultScore.textContent = `${correctCount * POINTS_PER_QUESTION}点 / 100点`;
+      renderAllRecords();
+      showScreen(resultScreen);
+    }
+
+    function goHome() {
+      isPlaying = false;
+      isPaused = false;
+      clearTimer();
+      clearNextQuestion();
+      renderAllRecords();
+      showScreen(homeScreen);
+    }
+
+    function answer(value, button) {
+      if (locked || !isPlaying || isPaused) {
+        return;
+      }
+
+      locked = true;
+      const question = questions[currentIndex];
+      const isCorrect = value === question.answer;
+
+      if (isCorrect) {
+        correctCount += 1;
+        reactionText.textContent = "〇";
+        reactionText.className = "reaction ok show";
+        button.classList.add("correct");
+      } else {
+        reactionText.textContent = "×";
+        reactionText.className = "reaction ng show";
+        button.classList.add("wrong");
+      }
+
+      document.querySelectorAll(".answer-button").forEach((answerButton) => {
+        answerButton.disabled = true;
+        if (Number(answerButton.dataset.value) === question.answer) {
+          answerButton.classList.add("correct");
+        }
+      });
+
+      nextQuestionId = window.setTimeout(() => {
+        currentIndex += 1;
+
+        if (currentIndex >= QUESTION_TOTAL) {
+          showResult("完了", true);
+          return;
+        }
+
+        renderQuestion();
+      }, REACTION_MS);
+    }
+
+    function buildAnswerButtons() {
+      answers.innerHTML = "";
+
+      for (let value = ANSWER_MIN; value <= ANSWER_MAX; value += 1) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "answer-button";
+        button.textContent = value;
+        button.dataset.value = value;
+        button.addEventListener("click", () => answer(value, button));
+        answers.appendChild(button);
+      }
+    }
+
+    function start() {
+      questions = makeQuestions();
+      currentIndex = 0;
+      correctCount = 0;
+      elapsedMs = 0;
+      locked = false;
+      isPaused = false;
+      pausedAt = 0;
+      stopButton.textContent = "ストップ";
+      isPlaying = true;
+      clearNextQuestion();
+      startTime = performance.now();
+      clearTimer();
+      timerId = window.setInterval(updateTime, 250);
+      timeText.textContent = "0秒";
+      progressText.textContent = `1 / ${QUESTION_TOTAL}`;
+      progressFill.style.width = `${100 / QUESTION_TOTAL}%`;
+      renderQuestion();
+      showScreen(playScreen);
+    }
+
+    startButton.addEventListener("click", start);
+    retryButton.addEventListener("click", start);
+    stopButton.addEventListener("click", () => {
+      if (!isPlaying || locked) {
+        return;
+      }
+
+      if (isPaused) {
+        startTime += performance.now() - pausedAt;
+        isPaused = false;
+        stopButton.textContent = "ストップ";
+        setAnswerButtonsDisabled(false);
+        timerId = window.setInterval(updateTime, 250);
+        updateTime();
+        return;
+      }
+
+      isPaused = true;
+      pausedAt = performance.now();
+      clearTimer();
+      setAnswerButtonsDisabled(true);
+      stopButton.textContent = "再開";
+    });
+    topButton.addEventListener("click", goHome);
+    resultTopButton.addEventListener("click", goHome);
+
+    buildAnswerButtons();
+    renderAllRecords();
+  </script>
+</body>
+</html>
