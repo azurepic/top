@@ -271,13 +271,13 @@
     }
 
     .problem {
-      min-height: clamp(120px, 20vh, 150px);
+      min-height: clamp(70px, 11vh, 90px);
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 8px;
       background: #f9faf7;
-      font-size: clamp(58px, 14vw, 108px);
+      font-size: clamp(50px, 11vw, 88px);
       font-weight: 900;
       line-height: 1;
       text-align: center;
@@ -316,16 +316,18 @@
     .answers {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 9px;
+      width: 100%;
+      gap: clamp(8px, 1.2vw, 14px);
     }
 
     .answer-button {
-      aspect-ratio: 2.8 / 1;
+      min-width: 0;
+      min-height: clamp(76px, 14vh, 118px);
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
       color: var(--ink);
-      font-size: clamp(24px, 5vw, 42px);
+      font-size: clamp(30px, 6vw, 58px);
       font-weight: 900;
       cursor: pointer;
     }
@@ -421,7 +423,7 @@
       }
 
       .problem {
-        min-height: 140px;
+        min-height: 76px;
       }
     }
   </style>
@@ -844,7 +846,7 @@
       pausedAt = performance.now();
       clearTimer();
       setAnswerButtonsDisabled(true);
-      stopButton.textContent = "再開";
+      stopButton.textContent = "リスタート";
     });
     topButton.addEventListener("click", goHome);
     resultTopButton.addEventListener("click", goHome);
