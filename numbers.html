@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<title>Touch the Numbers</title>
+
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  background: #111;
+  color: white;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app {
+  width: min(92vw, 430px);
+  text-align: center;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+
+.info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-size: 18px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  border: none;
+  font-size: 28px;
+  font-weight: bold;
+  background: #f2f2f2;
+  color: #111;
+  box-shadow: 0 4px 0 #999;
+}
+
+.tile:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #999;
+}
+
+.tile.done {
+  background: #333;
+  color: #555;
+  box-shadow: none;
+}
+
+.tile.wrong {
+  background: #ff6b6b;
+}
+
+button.control {
+  margin-top: 18px;
+  width: 100%;
+  padding: 14px;
+  font-size: 20px;
+  border-radius: 12px;
+  border: none;
+  font-weight: bold;
+  background: #4da3ff;
+  color: white;
+}
+
+.message {
+  height: 28px;
+  margin-top: 12px;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+  <h1>Touch the Numbers</h1>
+
+  <div class="info">
+    <div>次: <span id="next">1</span></div>
+    <div>TIME: <span id="time">0.00</span></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <button class="control" id="startBtn">START</button>
+
+  <div class="message" id="message"></div>
+  <div class="message">BEST: <span id="best">--</span></div>
+</div>
+
+<script>
+const SIZE = 25;
+
+const grid = document.getElementById("grid");
+const nextEl = document.getElementById("next");
+const timeEl = document.getElementById("time");
+const bestEl = document.getElementById("best");
+const messageEl = document.getElementById("message");
+const startBtn = document.getElementById("startBtn");
+
+let nextNumber = 1;
+let startTime = 0;
+let timerId = null;
+let playing = false;
+
+const best = localStorage.getItem("touchNumbersBest");
+if (best) bestEl.textContent = Number(best).toFixed(2) + "秒";
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function startGame() {
+  clearInterval(timerId);
+
+  nextNumber = 1;
+  playing = true;
+  startTime = performance.now();
+
+  nextEl.textContent = nextNumber;
+  timeEl.textContent = "0.00";
+  messageEl.textContent = "";
+  startBtn.textContent = "RETRY";
+
+  grid.innerHTML = "";
+
+  const numbers = shuffle([...Array(SIZE)].map((_, i) => i + 1));
+
+  numbers.forEach(num => {
+    const tile = document.createElement("button");
+    tile.className = "tile";
+    tile.textContent = num;
+    tile.dataset.num = num;
+
+    tile.addEventListener("click", () => tapTile(tile));
+
+    grid.appendChild(tile);
+  });
+
+  timerId = setInterval(updateTime, 20);
+}
+
+function updateTime() {
+  const now = performance.now();
+  const elapsed = (now - startTime) / 1000;
+  timeEl.textContent = elapsed.toFixed(2);
+}
+
+function tapTile(tile) {
+  if (!playing) return;
+
+  const num = Number(tile.dataset.num);
+
+  if (num === nextNumber) {
+    tile.classList.add("done");
+    tile.disabled = true;
+
+    nextNumber++;
+    nextEl.textContent = nextNumber <= SIZE ? nextNumber : "-";
+
+    if (nextNumber > SIZE) {
+      finishGame();
+    }
+  } else {
+    tile.classList.add("wrong");
+    setTimeout(() => tile.classList.remove("wrong"), 120);
+  }
+}
+
+function finishGame() {
+  playing = false;
+  clearInterval(timerId);
+
+  const finalTime = (performance.now() - startTime) / 1000;
+  timeEl.textContent = finalTime.toFixed(2);
+  messageEl.textContent = `CLEAR! ${finalTime.toFixed(2)}秒`;
+
+  const best = localStorage.getItem("touchNumbersBest");
+
+  if (!best || finalTime < Number(best)) {
+    localStorage.setItem("touchNumbersBest", finalTime);
+    bestEl.textContent = finalTime.toFixed(2) + "秒";
+    messageEl.textContent = `NEW BEST! ${finalTime.toFixed(2)}秒`;
+  }
+}
+
+startBtn.addEventListener("click", startGame);
+</script>
+</body>
+</html>
