@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>テンメイク</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+    background: linear-gradient(135deg, #fff3a3, #ffd6ec, #c9f7ff);
+    color: #333;
+    overflow: hidden;
+  }
+
+  .screen {
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 54px 28px 64px;
+  }
+  .active { display: flex; }
+
+  h1 {
+    font-size: 72px;
+    margin: 0 0 18px;
+    color: #ff6b6b;
+    text-shadow: 4px 4px 0 #fff;
+  }
+
+  .subtitle {
+    font-size: 30px;
+    margin-bottom: 32px;
+    font-weight: bold;
+  }
+
+  button {
+    border: none;
+    border-radius: 28px;
+    padding: 24px 54px;
+    font-size: 34px;
+    font-weight: bold;
+    background: #4ecdc4;
+    color: white;
+    box-shadow: 0 8px 0 #2a9d96;
+    cursor: pointer;
+  }
+
+  #game {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .topbar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 26px;
+    font-weight: bold;
+  }
+
+  .badge {
+    background: white;
+    border-radius: 24px;
+    padding: 10px 22px;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.12);
+  }
+
+  .questionText {
+    font-size: 32px;
+    font-weight: bold;
+  }
+
+  .numberBig {
+    font-size: 56px;
+    font-weight: 900;
+    color: #ff6b6b;
+    text-shadow: 3px 3px 0 #fff;
+    line-height: 1;
+  }
+
+  .choiceNumber {
+    font-size: 42px;
+    font-weight: 900;
+    color: #333;
+    margin-bottom: 6px;
+  }
+
+  .gridWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, 58px);
+    grid-template-rows: repeat(2, 58px);
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255,255,255,0.78);
+    border-radius: 24px;
+    box-shadow: inset 0 0 0 4px white, 0 5px 0 rgba(0,0,0,0.12);
+  }
+
+  .cell {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.55);
+    border: 3px dashed rgba(0,0,0,0.12);
+  }
+
+  .filled {
+    border: none;
+    box-shadow: inset -4px -4px 0 rgba(0,0,0,0.12);
+  }
+
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: 18px;
+    margin-top: 6px;
+  }
+
+  .choice {
+    padding: 10px 10px 14px;
+    border-radius: 28px;
+    background: white;
+    box-shadow: 0 7px 0 rgba(0,0,0,0.16);
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .choice .grid {
+    grid-template-columns: repeat(5, 38px);
+    grid-template-rows: repeat(2, 38px);
+    gap: 5px;
+    padding: 9px;
+    box-shadow: none;
+  }
+
+  .choice .cell {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  #mark {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 250px;
+    font-weight: 900;
+    z-index: 10;
+    pointer-events: none;
+    text-shadow: 8px 8px 0 white;
+  }
+
+  .maru { color: #18c96e; }
+  .batsu { color: #ff3b3b; }
+
+  .resultTime {
+    font-size: 48px;
+    background: white;
+    padding: 24px 44px;
+    border-radius: 28px;
+    margin: 20px;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.15);
+  }
+
+  .mascot {
+    font-size: 64px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div id="start" class="screen active">
+  <div class="mascot">🌈⭐🧩⭐🌈</div>
+  <h1>テンメイク</h1>
+  <div class="subtitle">ぴったり 10マスを つくろう！</div>
+  <button onclick="startGame()">スタート！</button>
+</div>
+
+<div id="game" class="screen">
+  <div class="topbar">
+    <div class="badge">できた！ <span id="score">0</span> / 20</div>
+    <div class="badge">⏱ <span id="timer">0</span> 秒</div>
+  </div>
+
+  <div class="questionText">あといくつで 10 になるかな？</div>
+
+  <div class="gridWrap">
+    <div class="numberBig"><span id="targetNumber">0</span></div>
+    <div id="target"></div>
+  </div>
+
+  <div class="choices" id="choices"></div>
+</div>
+
+<div id="finish" class="screen">
+  <div class="mascot">🎉🎈✨</div>
+  <h1>クリア！</h1>
+  <div class="resultTime">タイム：<span id="finalTime"></span> 秒</div>
+  <button onclick="startGame()">もういっかい！</button>
+</div>
+
+<div id="mark"></div>
+
+<script>
+const W = 5, H = 2, TOTAL = 10;
+let score = 0;
+let startTime = 0;
+let timerId = null;
+let correctNumber = 0;
+
+const colors = ["#ff6b6b", "#4ecdc4", "#45b7d1", "#f7b731", "#a55eea", "#26de81"];
+
+// 左下→右下、その後 左上→右上
+const fillOrder = [5, 6, 7, 8, 9, 0, 1, 2, 3, 4];
+
+function cellsByCount(count) {
+  return fillOrder.slice(0, count);
+}
+
+function makeGrid(count, color = "#4ecdc4", small = false) {
+  const cells = cellsByCount(count);
+  const grid = document.createElement("div");
+  grid.className = "grid";
+
+  for (let i = 0; i < TOTAL; i++) {
+    const c = document.createElement("div");
+    c.className = "cell";
+    if (cells.includes(i)) {
+      c.classList.add("filled");
+      c.style.background = color;
+    }
+    grid.appendChild(c);
+  }
+  return grid;
+}
+
+function makeChoice(num) {
+  const div = document.createElement("div");
+  div.className = "choice";
+
+  const n = document.createElement("div");
+  n.className = "choiceNumber";
+  n.textContent = num;
+
+  div.appendChild(n);
+  div.appendChild(makeGrid(num, colors[Math.floor(Math.random() * colors.length)], true));
+  div.onclick = () => answer(num);
+  return div;
+}
+
+function newQuestion() {
+  const targetNumber = 1 + Math.floor(Math.random() * 9);
+  correctNumber = TOTAL - targetNumber;
+
+  document.getElementById("targetNumber").textContent = targetNumber;
+  document.getElementById("target").innerHTML = "";
+  document.getElementById("target").appendChild(
+    makeGrid(targetNumber, colors[Math.floor(Math.random() * colors.length)])
+  );
+
+  const nums = [correctNumber];
+  while (nums.length < 4) {
+    const n = 1 + Math.floor(Math.random() * 9);
+    if (!nums.includes(n)) nums.push(n);
+  }
+
+  nums.sort(() => Math.random() - 0.5);
+
+  const box = document.getElementById("choices");
+  box.innerHTML = "";
+  nums.forEach(num => box.appendChild(makeChoice(num)));
+}
+
+function answer(num) {
+  if (num === correctNumber) {
+    score++;
+    document.getElementById("score").textContent = score;
+    showMark("○", true);
+    playCorrect();
+
+    setTimeout(() => {
+      if (score >= 20) finishGame();
+      else newQuestion();
+    }, 650);
+  } else {
+    showMark("×", false);
+    playWrong();
+  }
+}
+
+function showMark(text, ok) {
+  const m = document.getElementById("mark");
+  m.textContent = text;
+  m.className = ok ? "maru" : "batsu";
+  m.style.display = "flex";
+  setTimeout(() => m.style.display = "none", 550);
+}
+
+function startGame() {
+  score = 0;
+  startTime = Date.now();
+  document.getElementById("score").textContent = "0";
+  document.getElementById("timer").textContent = "0";
+
+  document.getElementById("start").classList.remove("active");
+  document.getElementById("finish").classList.remove("active");
+  document.getElementById("game").classList.add("active");
+
+  clearInterval(timerId);
+  timerId = setInterval(() => {
+    document.getElementById("timer").textContent =
+      Math.floor((Date.now() - startTime) / 1000);
+  }, 200);
+
+  newQuestion();
+}
+
+function finishGame() {
+  clearInterval(timerId);
+  const time = Math.floor((Date.now() - startTime) / 1000);
+  document.getElementById("finalTime").textContent = time;
+
+  document.getElementById("game").classList.remove("active");
+  document.getElementById("finish").classList.add("active");
+}
+
+function tone(freq, duration, type = "sine") {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.16, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + duration);
+}
+
+function playCorrect() {
+  tone(660, 0.12);
+  setTimeout(() => tone(880, 0.16), 110);
+}
+
+function playWrong() {
+  tone(180, 0.22, "sawtooth");
+}
+</script>
+</body>
+</html>
