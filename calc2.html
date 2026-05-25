@@ -1,0 +1,136 @@
+from pathlib import Path
+
+path = Path("/mnt/data/kuku.html")
+html = path.read_text(encoding="utf-8")
+
+# CSS追加：.question-card の前あたりに入れる
+css_insert = r'''
+    .matrix-card {
+      padding: 14px 16px 16px;
+    }
+
+    .matrix-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .matrix-wrap {
+      display: grid;
+      grid-template-columns: 24px repeat(9, 1fr);
+      grid-template-rows: 22px repeat(9, 1fr);
+      gap: 4px;
+      align-items: center;
+      justify-items: center;
+      width: 100%;
+      max-width: 390px;
+      margin: 0 auto;
+    }
+
+    .axis-label {
+      font-size: 12px;
+      font-weight: 900;
+      color: #8a7b6c;
+      line-height: 1;
+    }
+
+    .dot {
+      width: min(7.2vw, 28px);
+      height: min(7.2vw, 28px);
+      border-radius: 999px;
+      background: #d8d2c8;
+      border: 2px solid #c9c1b6;
+      transition: background .15s, border-color .15s, transform .15s;
+    }
+
+    .dot.active {
+      background: linear-gradient(135deg, #ffb347, #ff7f50);
+      border-color: #ff7f50;
+      transform: scale(1.08);
+      box-shadow: 0 2px 6px rgba(255, 127, 80, .35);
+    }
+
+    .matrix-caption {
+      text-align: center;
+      color: #6b4a2b;
+      font-size: 13px;
+      font-weight: 900;
+      margin-top: 8px;
+      min-height: 18px;
+    }
+'''
+html = html.replace("    .question-card {", css_insert + "\n    .question-card {", 1)
+
+# HTML追加：question-cardの直前にマトリックスカード
+matrix_html = r'''
+      <div class="card matrix-card">
+        <div class="matrix-title">
+          <span>たて：かけられる数</span>
+          <span>よこ：かける数</span>
+        </div>
+        <div id="matrix" class="matrix-wrap"></div>
+        <div id="matrixCaption" class="matrix-caption"></div>
+      </div>
+'''
+html = html.replace('      <div class="card question-card">', matrix_html + '\n      <div class="card question-card">', 1)
+
+# JS追加：関数群を startQuiz の前に挿入
+js_insert = r'''
+    function buildMatrix() {
+      const matrix = $("matrix");
+      matrix.innerHTML = "";
+
+      const blank = document.createElement("div");
+      matrix.appendChild(blank);
+
+      for (let x = 1; x <= 9; x++) {
+        const label = document.createElement("div");
+        label.className = "axis-label";
+        label.textContent = x;
+        matrix.appendChild(label);
+      }
+
+      for (let y = 1; y <= 9; y++) {
+        const yLabel = document.createElement("div");
+        yLabel.className = "axis-label";
+        yLabel.textContent = y;
+        matrix.appendChild(yLabel);
+
+        for (let x = 1; x <= 9; x++) {
+          const dot = document.createElement("div");
+          dot.className = "dot";
+          dot.dataset.x = x;
+          dot.dataset.y = y;
+          matrix.appendChild(dot);
+        }
+      }
+    }
+
+    function updateMatrix(q) {
+      const [a, b] = q.formula.split("×").map(Number);
+      document.querySelectorAll(".dot").forEach(dot => {
+        const x = Number(dot.dataset.x);
+        const y = Number(dot.dataset.y);
+        dot.classList.toggle("active", y <= a && x <= b);
+      });
+      $("matrixCaption").textContent = `${a} × ${b} = ${a * b}こ`;
+    }
+'''
+html = html.replace("    function startQuiz(useLast = false) {", js_insert + "\n    function startQuiz(useLast = false) {", 1)
+
+# showQuestionに updateMatrix(q) 追加
+html = html.replace('      $("answer").textContent = "";', '      $("answer").textContent = "";\n      updateMatrix(q);', 1)
+
+# 初期化 buildMatrix 呼び出しをイベント登録前に追加
+html = html.replace('    $("startBtn").addEventListener("click", () => startQuiz(false));', '    buildMatrix();\n\n    $("startBtn").addEventListener("click", () => startQuiz(false));', 1)
+
+# 高さが低いときのCSSにmatrix調整も追加
+html = html.replace('      .key { height: 58px; }', '      .key { height: 58px; }\n      .dot { width: min(6.5vw, 24px); height: min(6.5vw, 24px); }\n      .matrix-wrap { gap: 3px; }', 1)
+
+out = Path("/mnt/data/kuku_matrix.html")
+out.write_text(html, encoding="utf-8")
+out
