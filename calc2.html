@@ -1,136 +1,452 @@
-from pathlib import Path
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>九九テンポ</title>
 
-path = Path("/mnt/data/kuku.html")
-html = path.read_text(encoding="utf-8")
+<style>
+:root{
+--bg:#f7f5ee;
+--card:#ffffff;
+--ink:#272727;
+--muted:#777;
+--main:#ffb347;
+--main2:#ff7f50;
+--ok:#32b768;
+--ng:#ef4444;
+--line:#e8e2d6;
+}
 
-# CSS追加：.question-card の前あたりに入れる
-css_insert = r'''
-    .matrix-card {
-      padding: 14px 16px 16px;
-    }
+*{
+box-sizing:border-box;
+-webkit-tap-highlight-color:transparent;
+}
 
-    .matrix-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--muted);
-      font-weight: 900;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
+body{
+margin:0;
+min-height:100vh;
+font-family:system-ui,-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;
+color:var(--ink);
+background:
+radial-gradient(circle at 20% 10%, #fff3c4 0 12%, transparent 13%),
+radial-gradient(circle at 90% 0%, #ffd7c2 0 14%, transparent 15%),
+var(--bg);
+display:flex;
+justify-content:center;
+align-items:stretch;
+}
 
-    .matrix-wrap {
-      display: grid;
-      grid-template-columns: 24px repeat(9, 1fr);
-      grid-template-rows: 22px repeat(9, 1fr);
-      gap: 4px;
-      align-items: center;
-      justify-items: center;
-      width: 100%;
-      max-width: 390px;
-      margin: 0 auto;
-    }
+.app{
+width:100%;
+max-width:520px;
+padding:16px;
+display:flex;
+flex-direction:column;
+gap:14px;
+}
 
-    .axis-label {
-      font-size: 12px;
-      font-weight: 900;
-      color: #8a7b6c;
-      line-height: 1;
-    }
+.card{
+background:var(--card);
+border:2px solid var(--line);
+border-radius:28px;
+box-shadow:0 10px 24px rgba(0,0,0,.08);
+padding:20px;
+}
 
-    .dot {
-      width: min(7.2vw, 28px);
-      height: min(7.2vw, 28px);
-      border-radius: 999px;
-      background: #d8d2c8;
-      border: 2px solid #c9c1b6;
-      transition: background .15s, border-color .15s, transform .15s;
-    }
+h1{
+margin:6px 0 2px;
+font-size:32px;
+text-align:center;
+letter-spacing:.05em;
+}
 
-    .dot.active {
-      background: linear-gradient(135deg, #ffb347, #ff7f50);
-      border-color: #ff7f50;
-      transform: scale(1.08);
-      box-shadow: 0 2px 6px rgba(255, 127, 80, .35);
-    }
+.sub{
+text-align:center;
+color:var(--muted);
+font-weight:700;
+margin-bottom:14px;
+}
 
-    .matrix-caption {
-      text-align: center;
-      color: #6b4a2b;
-      font-size: 13px;
-      font-weight: 900;
-      margin-top: 8px;
-      min-height: 18px;
-    }
-'''
-html = html.replace("    .question-card {", css_insert + "\n    .question-card {", 1)
+.section-title{
+font-weight:900;
+margin:18px 0 10px;
+font-size:18px;
+}
 
-# HTML追加：question-cardの直前にマトリックスカード
-matrix_html = r'''
-      <div class="card matrix-card">
-        <div class="matrix-title">
-          <span>たて：かけられる数</span>
-          <span>よこ：かける数</span>
-        </div>
-        <div id="matrix" class="matrix-wrap"></div>
-        <div id="matrixCaption" class="matrix-caption"></div>
-      </div>
-'''
-html = html.replace('      <div class="card question-card">', matrix_html + '\n      <div class="card question-card">', 1)
+.dan-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+}
 
-# JS追加：関数群を startQuiz の前に挿入
-js_insert = r'''
-    function buildMatrix() {
-      const matrix = $("matrix");
-      matrix.innerHTML = "";
+.dan-btn,.mode-btn,.key,.primary,.ghost{
+border:0;
+border-radius:18px;
+font-weight:900;
+cursor:pointer;
+touch-action:manipulation;
+}
 
-      const blank = document.createElement("div");
-      matrix.appendChild(blank);
+.dan-btn{
+padding:16px 0;
+font-size:22px;
+background:#f1eadf;
+color:#4b4035;
+}
 
-      for (let x = 1; x <= 9; x++) {
-        const label = document.createElement("div");
-        label.className = "axis-label";
-        label.textContent = x;
-        matrix.appendChild(label);
-      }
+.dan-btn.selected{
+background:linear-gradient(135deg,var(--main),var(--main2));
+color:#fff;
+transform:translateY(-1px);
+box-shadow:0 6px 0 #d96b35;
+}
 
-      for (let y = 1; y <= 9; y++) {
-        const yLabel = document.createElement("div");
-        yLabel.className = "axis-label";
-        yLabel.textContent = y;
-        matrix.appendChild(yLabel);
+.mode-row{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
 
-        for (let x = 1; x <= 9; x++) {
-          const dot = document.createElement("div");
-          dot.className = "dot";
-          dot.dataset.x = x;
-          dot.dataset.y = y;
-          matrix.appendChild(dot);
-        }
-      }
-    }
+.mode-btn{
+padding:16px;
+font-size:18px;
+background:#f1eadf;
+color:#4b4035;
+}
 
-    function updateMatrix(q) {
-      const [a, b] = q.formula.split("×").map(Number);
-      document.querySelectorAll(".dot").forEach(dot => {
-        const x = Number(dot.dataset.x);
-        const y = Number(dot.dataset.y);
-        dot.classList.toggle("active", y <= a && x <= b);
-      });
-      $("matrixCaption").textContent = `${a} × ${b} = ${a * b}こ`;
-    }
-'''
-html = html.replace("    function startQuiz(useLast = false) {", js_insert + "\n    function startQuiz(useLast = false) {", 1)
+.mode-btn.selected{
+background:#4f46e5;
+color:white;
+box-shadow:0 6px 0 #3730a3;
+}
 
-# showQuestionに updateMatrix(q) 追加
-html = html.replace('      $("answer").textContent = "";', '      $("answer").textContent = "";\n      updateMatrix(q);', 1)
+.primary{
+width:100%;
+margin-top:20px;
+padding:18px;
+font-size:24px;
+color:white;
+background:linear-gradient(135deg,#22c55e,#16a34a);
+box-shadow:0 7px 0 #15803d;
+}
 
-# 初期化 buildMatrix 呼び出しをイベント登録前に追加
-html = html.replace('    $("startBtn").addEventListener("click", () => startQuiz(false));', '    buildMatrix();\n\n    $("startBtn").addEventListener("click", () => startQuiz(false));', 1)
+.primary:active,.key:active,.dan-btn:active,.mode-btn:active,.ghost:active{
+transform:translateY(3px);
+box-shadow:none;
+}
 
-# 高さが低いときのCSSにmatrix調整も追加
-html = html.replace('      .key { height: 58px; }', '      .key { height: 58px; }\n      .dot { width: min(6.5vw, 24px); height: min(6.5vw, 24px); }\n      .matrix-wrap { gap: 3px; }', 1)
+.ghost{
+width:100%;
+padding:14px;
+font-size:18px;
+background:#eee7dc;
+color:#4b4035;
+}
 
-out = Path("/mnt/data/kuku_matrix.html")
-out.write_text(html, encoding="utf-8")
-out
+.hidden{
+display:none !important;
+}
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+color:var(--muted);
+font-weight:900;
+padding:0 4px;
+}
+
+.progress-wrap{
+height:12px;
+background:#eadfce;
+border-radius:999px;
+overflow:hidden;
+margin-top:8px;
+}
+
+.progress{
+height:100%;
+width:0%;
+background:linear-gradient(90deg,var(--main),var(--main2));
+transition:width .2s;
+}
+
+.matrix-card{
+padding:14px 16px 16px;
+}
+
+.matrix-title{
+display:flex;
+justify-content:space-between;
+align-items:center;
+color:var(--muted);
+font-weight:900;
+font-size:14px;
+margin-bottom:8px;
+}
+
+.matrix-wrap{
+display:grid;
+grid-template-columns:24px repeat(9,1fr);
+grid-template-rows:22px repeat(9,1fr);
+gap:4px;
+align-items:center;
+justify-items:center;
+width:100%;
+max-width:390px;
+margin:0 auto;
+}
+
+.axis-label{
+font-size:12px;
+font-weight:900;
+color:#8a7b6c;
+line-height:1;
+}
+
+.dot{
+width:min(7.2vw,28px);
+height:min(7.2vw,28px);
+border-radius:999px;
+background:#d8d2c8;
+border:2px solid #c9c1b6;
+transition:background .15s,border-color .15s,transform .15s;
+}
+
+.dot.active{
+background:linear-gradient(135deg,#ffb347,#ff7f50);
+border-color:#ff7f50;
+transform:scale(1.08);
+box-shadow:0 2px 6px rgba(255,127,80,.35);
+}
+
+.matrix-caption{
+text-align:center;
+color:#6b4a2b;
+font-size:13px;
+font-weight:900;
+margin-top:8px;
+min-height:18px;
+}
+
+.question-card{
+text-align:center;
+min-height:260px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+position:relative;
+overflow:hidden;
+}
+
+.formula{
+font-size:clamp(54px,15vw,84px);
+line-height:1;
+font-weight:1000;
+margin:8px 0;
+}
+
+.reading{
+font-size:30px;
+font-weight:900;
+color:#6b4a2b;
+margin-bottom:16px;
+}
+
+.answer{
+height:64px;
+font-size:46px;
+font-weight:1000;
+letter-spacing:.05em;
+color:#111827;
+}
+
+.feedback{
+position:absolute;
+inset:0;
+background:rgba(255,255,255,.92);
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+font-weight:1000;
+pointer-events:none;
+opacity:0;
+transform:scale(.96);
+transition:opacity .08s,transform .08s;
+}
+
+.feedback.show{
+opacity:1;
+transform:scale(1);
+}
+
+.feedback.ok{
+color:var(--ok);
+}
+
+.feedback.ng{
+color:var(--ng);
+}
+
+.feedback .mark{
+font-size:78px;
+line-height:1;
+}
+
+.feedback .full-reading{
+font-size:34px;
+margin-top:8px;
+padding:0 14px;
+}
+
+.keypad{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+}
+
+.key{
+height:68px;
+font-size:32px;
+color:#2b2118;
+background:#fff;
+border:2px solid #eadfce;
+box-shadow:0 6px 0 #d9cdbb;
+}
+
+.key.enter{
+background:linear-gradient(135deg,var(--main),var(--main2));
+color:#fff;
+border:0;
+box-shadow:0 6px 0 #d96b35;
+}
+
+.key.clear{
+background:#f3f0ea;
+color:#5b5148;
+}
+
+.result-score{
+text-align:center;
+font-size:56px;
+font-weight:1000;
+color:#16a34a;
+margin:12px 0 4px;
+}
+
+.result-detail{
+text-align:center;
+color:var(--muted);
+font-weight:800;
+line-height:1.8;
+}
+
+.small-note{
+font-size:13px;
+color:var(--muted);
+text-align:center;
+margin-top:12px;
+line-height:1.5;
+}
+</style>
+</head>
+
+<body>
+
+<main class="app">
+
+<section id="startScreen" class="card">
+<h1>九九テンポ</h1>
+<div class="sub">えらんだ段を、ぜんぶ1回ずつ！</div>
+
+<div class="section-title">① やる段をえらぶ</div>
+<div id="danGrid" class="dan-grid"></div>
+
+<div class="section-title">② 出すじゅんばん</div>
+
+<div class="mode-row">
+<button class="mode-btn selected" data-mode="order">じゅんばん</button>
+<button class="mode-btn" data-mode="random">ランダム</button>
+</div>
+
+<button id="startBtn" class="primary">スタート</button>
+</section>
+
+<section id="quizScreen" class="hidden">
+
+<div class="topbar">
+<div id="countText">1 / 9</div>
+<div id="timeText">0.0秒</div>
+</div>
+
+<div class="progress-wrap">
+<div id="progress" class="progress"></div>
+</div>
+
+<div class="card matrix-card">
+<div class="matrix-title">
+<span>たて：かけられる数</span>
+<span>よこ：かける数</span>
+</div>
+
+<div id="matrix" class="matrix-wrap"></div>
+
+<div id="matrixCaption" class="matrix-caption"></div>
+</div>
+
+<div class="card question-card">
+
+<div id="formula" class="formula">2×3</div>
+<div id="reading" class="reading">にさんが</div>
+<div id="answer" class="answer"></div>
+
+<div id="feedback" class="feedback">
+<div id="feedbackMark" class="mark">○</div>
+<div id="fullReading" class="full-reading"></div>
+</div>
+
+</div>
+
+<div class="keypad">
+<button class="key" data-key="1">1</button>
+<button class="key" data-key="2">2</button>
+<button class="key" data-key="3">3</button>
+<button class="key" data-key="4">4</button>
+<button class="key" data-key="5">5</button>
+<button class="key" data-key="6">6</button>
+<button class="key" data-key="7">7</button>
+<button class="key" data-key="8">8</button>
+<button class="key" data-key="9">9</button>
+<button class="key clear" data-key="clear">けす</button>
+<button class="key" data-key="0">0</button>
+<button class="key enter" data-key="enter">OK</button>
+</div>
+
+</section>
+
+<section id="resultScreen" class="card hidden">
+
+<h1>おしまい！</h1>
+
+<div class="sub">ぜんぶできた！</div>
+
+<div id="score" class="result-score">3.2秒</div>
+
+<div id="detail" class="result-detail"></div>
+
+<button id="againBtn" class="primary">もういちど</button>
+
+<button id="backBtn" class="ghost" style="margin-top:12px;">段をえらびなおす</button>
+
+</section>
+
+</main>
+
+<script>
+alert("HTMLは長すぎて途中で切れるので、続きが必要");
+</script>
+
+</body>
+</html>
